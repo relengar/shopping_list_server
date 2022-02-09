@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  main:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    network_mode: "host"
+#    ports:
+#      - "3030:3030"
+    env_file:
+      - .env
+    environment:
+      - RUST_BACKTRACE=1

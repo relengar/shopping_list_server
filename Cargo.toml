@@ -1,0 +1,24 @@
+[package]
+name = "shopping_list"
+version = "0.1.0"
+authors = ["Andrej <andrej.delmar@saferpass.net>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+warp = "0.3.1"
+serde = "1.0.130"
+serde_derive = "1.0.130"
+validator = { version = "0.14.0", features = ["derive"] }
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+rust-argon2 = "0.8.3"
+
+tokio-postgres = { version = "0.7.2", features=["with-uuid-0_8"] }
+mobc = "0.7.3"
+mobc-postgres = "0.7.0"
+mobc-redis = "0.7.0"
+chrono = "0.4.19"
+jsonwebtoken = "7.2.0"
+dotenv = "0.15.0"
