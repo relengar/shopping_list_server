@@ -1,23 +1,24 @@
-use crate::models::shopping_list::{Query, ShoppingList, PartialShoppingList, PartialShoppingListDTO};
+use crate::models::shopping_list::{ShoppingList, PartialShoppingList, PartialShoppingListDTO};
 use crate::services::database::{DBConn};
 use warp::{Reply, Rejection};
 use uuid::Uuid;
-use crate::models::{QueryResponse};
+use crate::models::{QueryResponse, Pagination};
 use warp::http::StatusCode;
 use warp::reply::{Response,json};
 use crate::middlewares::auth::AuthenticatedUser;
 use crate::middlewares::error::HttpError;
 use crate::models::sharing::ShareListBody;
 
-pub async fn get_shopping_lists(db: DBConn, query: Query, owner: AuthenticatedUser) -> Result<impl Reply, Rejection> {
-    let page = (query.page - 1) * query.limit;
+pub async fn get_shopping_lists(db: DBConn, pagination: Pagination, owner: AuthenticatedUser) -> Result<impl Reply, Rejection> {
+    let offset = pagination.get_page(0);
+    let limit = pagination.get_limit(10);
     // TODO mark shared? provide owner name?
     let db_response = db.query(
         "SELECT * FROM shopping_list l
                     LEFT JOIN shopping_list_share sh ON sh.shopping_list_id=l.id
                     WHERE l.owner_id=$1 OR sh.target_user_id=$1
                     LIMIT $2::int OFFSET $3::int",
-        &[&owner.id, &query.limit, &page],
+        &[&owner.id, &limit, &offset],
     ).await.map_err(|e| HttpError::Query(e))?;
     let total_count = db.query(
         "SELECT count(l.id)::int FROM shopping_list l

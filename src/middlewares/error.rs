@@ -6,6 +6,8 @@ use std::convert::Infallible;
 use warp::http::StatusCode;
 use tokio_postgres::Error as TokioError;
 use mobc_redis::redis::RedisError;
+use warp::filters::body::BodyDeserializeError;
+use std::error::Error;
 
 #[derive(Debug)]
 pub enum HttpError {
@@ -37,27 +39,31 @@ pub async fn handle_rejection(rejection: Rejection) -> Result<impl Reply, Infall
     let mut validation_errors : Option<Vec<ValidationErrors>> = None;
     if rejection.is_not_found() {
         status = StatusCode::NOT_FOUND;
-        message = "Not found";
+        message = String::from("Not found");
     }
     else if let Some(e) = rejection.find::<HttpError>() {
         let (new_status, new_message, errors) = error_match(e);
         println!("Error: {:?}", e);
         validation_errors = errors;
         status = new_status;
-        message = new_message;
+        message = String::from(new_message);
     }
-    else if let Some(_) = rejection.find::<MethodNotAllowed>() {
+    else if let Some(e) = rejection.find::<BodyDeserializeError>() {
+        status = StatusCode::BAD_REQUEST;
+        message = e.source().unwrap().to_string();
+    }
+    else if let Some(_e) = rejection.find::<MethodNotAllowed>() {
         status = StatusCode::NOT_FOUND;
-        message = "Not found";
+        message = String::from("Not found");
     }
     else {
         println!("Error {:?}", rejection);
         status = StatusCode::INTERNAL_SERVER_ERROR;
-        message = "Internal server error";
+        message = String::from("Internal server error");
     }
 
     let error = HttpErrorBody {
-        message,
+        message: message.as_str(),
         code: status.as_str(),
         data: validation_errors,
     };

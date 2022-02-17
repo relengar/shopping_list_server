@@ -25,12 +25,6 @@ pub struct PartialShoppingList {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Query {
-    pub limit: i32,
-    pub page: i32,
-}
-
 impl ShoppingList {
     pub fn from_row(row: &Row) -> Self {
         let id: Uuid = row.get(0);

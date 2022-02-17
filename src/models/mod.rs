@@ -1,5 +1,6 @@
 use serde_derive::{Serialize};
 use validator::ValidationError;
+use validator::{Validate};
 use uuid::Uuid;
 
 pub mod shopping_list;
@@ -42,9 +43,11 @@ trait Model<Partial> {
     fn apply_changes(self: &mut Self, changes: &Partial);
 }
 
-#[derive(Copy, Clone, Deserialize)]
+#[derive(Copy, Clone, Deserialize, Debug, Validate)]
 pub struct Pagination {
+    #[validate(range(min = 1, max = 2000))]
     pub limit: Option<i32>,
+    #[validate(range(min = 1))]
     pub page: Option<i32>,
 }
 

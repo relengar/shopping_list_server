@@ -1,7 +1,7 @@
 use warp::{Filter, Rejection, Reply};
 use crate::services::items::{create_items, get_items as get_items_handler, update_item, delete_item as delete_item_handler};
 use uuid::Uuid;
-use crate::middlewares::{with_vec_body, with_body, with_database};
+use crate::middlewares::{with_vec_body, with_body, with_database, with_query};
 use crate::middlewares::auth::with_auth;
 use crate::models::GlobalContext;
 
@@ -18,7 +18,7 @@ fn get_items(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = R
         .and(with_path())
         .and(with_auth(&ctx.redis_pool))
         .and(with_database(&ctx.pg_pool))
-        .and(warp::query())
+        .and(with_query())
         .and_then(get_items_handler)
 }
 

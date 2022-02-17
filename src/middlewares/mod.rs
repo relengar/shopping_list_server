@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod error;
 
+use std::fmt::{Debug};
 use validator::{Validate, ValidationErrors};
 use warp::{Filter, Rejection};
 use serde::de::DeserializeOwned;
@@ -32,11 +33,19 @@ fn validate_vec_dto<T: Validate>(data: Vec<T>) -> Result<Vec<T>, HttpError> {
 
 pub fn with_body<T>() -> impl Filter<Extract = (T,), Error = Rejection> + Clone
     where
-        T: DeserializeOwned + Validate + Send,
+        T: DeserializeOwned + Validate + Send + Debug,
 {
     warp::body::content_length_limit(1024 * 16)
         .and(warp::body::json())
         .and_then(|value| async move { validate_dto(value).map_err(warp::reject::custom) })
+}
+
+pub fn with_query<T: 'static>() -> impl Filter<Extract = (T,), Error = Rejection> + Clone
+    where
+        T: DeserializeOwned + Validate + Send + Debug,
+{
+    warp::query()
+        .and_then(|value: T| async move { validate_dto(value).map_err(warp::reject::custom) })
 }
 
 pub fn with_vec_body<T>() -> impl Filter<Extract = (Vec<T>,), Error = Rejection> + Clone
