@@ -14,7 +14,7 @@ pub async fn get_items(shopping_list_id: Uuid, owner: AuthenticatedUser, db: DBC
 
     let mut data = Vec::new();
     let limit = pagination.get_limit(10);
-    let offset = pagination.get_page(0) * limit;
+    let offset = pagination.get_offset();
     let rows = db.query(
         "SELECT * FROM item WHERE shopping_list_id=$1 LIMIT $2::int OFFSET $3::int",
         &[&shopping_list_id, &limit, &offset],

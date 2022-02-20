@@ -60,11 +60,12 @@ impl Pagination {
         }
     }
 
-    pub fn get_page(self: Self, default: i32) -> i32 {
+    pub fn get_offset(self: Self) -> i32 {
+        let limit = self.get_limit(1);
         if let Some(v) = self.page {
-            v
+            (v - 1) * limit
         } else {
-            default
+            0
         }
     }
 }

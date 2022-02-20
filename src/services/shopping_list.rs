@@ -10,8 +10,8 @@ use crate::middlewares::error::HttpError;
 use crate::models::sharing::ShareListBody;
 
 pub async fn get_shopping_lists(db: DBConn, pagination: Pagination, owner: AuthenticatedUser) -> Result<impl Reply, Rejection> {
-    let offset = pagination.get_page(0);
     let limit = pagination.get_limit(10);
+    let offset = pagination.get_offset();
     // TODO mark shared? provide owner name?
     let db_response = db.query(
         "SELECT * FROM shopping_list l
