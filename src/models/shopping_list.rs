@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use validator::{Validate};
 use mobc_postgres::tokio_postgres::Row;
-use crate::models::{is_uuid};
+use crate::models::{is_uuid, Model};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Validate, Serialize, Clone)]
@@ -25,24 +25,24 @@ pub struct PartialShoppingList {
     pub description: Option<String>,
 }
 
-impl ShoppingList {
-    pub fn from_row(row: &Row) -> Self {
-        let id: Uuid = row.get(0);
-        let owner_id: Uuid = row.get(3);
-        ShoppingList {
-            id: Some(id.to_string()),
-            title: row.get(1),
-            description: row.get(2),
-            owner: owner_id.to_string(),
-        }
-    }
-
-    pub fn apply_changes(self: &mut Self, changes: &PartialShoppingList) {
+impl Model<PartialShoppingList> for ShoppingList {
+    fn apply_changes(self: &mut Self, changes: &PartialShoppingList) {
         if let Some(title) = &changes.title  {
             self.title = String::from(title);
         }
         if let Some(description) = &changes.description {
             self.description = String::from(description);
+        }
+    }
+
+    fn from_row(row: &Row) -> Self {
+        let id: Uuid = row.get("id");
+        let owner_id: Uuid = row.get("owner_id");
+        ShoppingList {
+            id: Some(id.to_string()),
+            title: row.get("title"),
+            description: row.get("description"),
+            owner: owner_id.to_string(),
         }
     }
 }

@@ -13,6 +13,7 @@ pub fn shopping_list_router(ctx: &GlobalContext) -> impl Filter<Extract = impl R
                 .or(update_list(ctx))
                 .or(delete_list(ctx))
         )
+    .and(warp::path::end())
 }
 
 fn get_my_lists(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -33,7 +34,7 @@ fn post_list(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = R
 
 fn update_list(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::patch()
-        .and(warp::path!(Uuid)).and(warp::path::end())
+        .and(warp::path!(Uuid))
         .and(with_auth(&ctx.redis_pool))
         .and(with_database(&ctx.pg_pool))
         .and(with_body())
@@ -42,7 +43,7 @@ fn update_list(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error =
 
 fn delete_list(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::delete()
-        .and(warp::path!(Uuid)).and(warp::path::end())
+        .and(warp::path!(Uuid))
         .and(with_auth(&ctx.redis_pool).map(|user: AuthenticatedUser| user.id))
         .and(with_database(&ctx.pg_pool))
         .and_then(delete)

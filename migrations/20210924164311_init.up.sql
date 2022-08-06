@@ -1,11 +1,13 @@
 BEGIN;
 
+  CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
   CREATE TABLE item (
     id uuid NOT NULL,
     name text NOT NULL,
     description text NOT NULL,
-    total_amount int NOT NULL,
-    current_amount int NOT NULL,
+    total_amount real NOT NULL,
+    current_amount real NOT NULL,
     unit text NOT NULL,
     bought boolean NOT NULL DEFAULT false,
     tags text[] NOT NULL DEFAULT '{}',

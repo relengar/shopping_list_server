@@ -2,6 +2,7 @@ use serde_derive::{Serialize};
 use validator::ValidationError;
 use validator::{Validate};
 use uuid::Uuid;
+use mobc_postgres::tokio_postgres::Row;
 
 pub mod shopping_list;
 pub mod item;
@@ -39,8 +40,13 @@ impl<T> QueryResponse<T> {
     }
 }
 
-trait Model<Partial> {
+pub trait SqlQueryResponse {
+    fn from_row(row: &Row) -> Self;
+}
+
+pub trait Model<Partial> {
     fn apply_changes(self: &mut Self, changes: &Partial);
+    fn from_row(row: &Row) -> Self;
 }
 
 #[derive(Copy, Clone, Deserialize, Debug, Validate)]

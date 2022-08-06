@@ -1,7 +1,7 @@
 use validator::{ValidationErrors};
 use serde_derive::Serialize;
 use warp::{Rejection, Reply};
-use warp::reject::{Reject, MethodNotAllowed};
+use warp::reject::{Reject, MethodNotAllowed, InvalidQuery};
 use std::convert::Infallible;
 use warp::http::StatusCode;
 use tokio_postgres::Error as TokioError;
@@ -51,6 +51,10 @@ pub async fn handle_rejection(rejection: Rejection) -> Result<impl Reply, Infall
     else if let Some(e) = rejection.find::<BodyDeserializeError>() {
         status = StatusCode::BAD_REQUEST;
         message = e.source().unwrap().to_string();
+    }
+    else if let Some(e) = rejection.find::<InvalidQuery>() {
+        status = StatusCode::BAD_REQUEST;
+        message = e.to_string();
     }
     else if let Some(_e) = rejection.find::<MethodNotAllowed>() {
         status = StatusCode::NOT_FOUND;

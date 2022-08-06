@@ -2,22 +2,27 @@ use crate::models::shopping_list::{ShoppingList, PartialShoppingList, PartialSho
 use crate::services::database::{DBConn};
 use warp::{Reply, Rejection};
 use uuid::Uuid;
-use crate::models::{QueryResponse, Pagination};
+use crate::models::{QueryResponse, Pagination, Model, SqlQueryResponse};
 use warp::http::StatusCode;
 use warp::reply::{Response,json};
 use crate::middlewares::auth::AuthenticatedUser;
 use crate::middlewares::error::HttpError;
 use crate::models::sharing::ShareListBody;
+use crate::models::user::UserResponse;
 
 pub async fn get_shopping_lists(db: DBConn, pagination: Pagination, owner: AuthenticatedUser) -> Result<impl Reply, Rejection> {
     let limit = pagination.get_limit(10);
     let offset = pagination.get_offset();
     // TODO mark shared? provide owner name?
     let db_response = db.query(
-        "SELECT * FROM shopping_list l
-                    LEFT JOIN shopping_list_share sh ON sh.shopping_list_id=l.id
-                    WHERE l.owner_id=$1 OR sh.target_user_id=$1
-                    LIMIT $2::int OFFSET $3::int",
+        "SELECT
+            distinct on (l.id) id, 
+            l.*
+         FROM shopping_list l
+         LEFT JOIN shopping_list_share sh ON sh.shopping_list_id=l.id
+         WHERE 
+            l.owner_id=$1 OR sh.target_user_id=$1
+         LIMIT $2::int OFFSET $3::int",
         &[&owner.id, &limit, &offset],
     ).await.map_err(|e| HttpError::Query(e))?;
     let total_count = db.query(
@@ -134,6 +139,29 @@ pub async fn stop_sharing_list(
     ).await.map_err(|e| HttpError::Query(e))?;
 
     Ok(warp::reply::with_status(warp::reply(),StatusCode::NO_CONTENT))
+}
+
+pub async fn get_list_sharing(
+    shopping_list_id: Uuid,
+    owner: AuthenticatedUser,
+    db: DBConn,
+) -> Result<impl Reply, Rejection> {
+    let has = has_shopping_list(&shopping_list_id, &owner.id, &db).await;
+    if !has {
+        let msg = String::from("Not allowed to share this list");
+        return Err(warp::reject::custom(HttpError::Unauthorized(msg)));
+    }
+
+    let db_response = db.query(
+        "
+        SELECT u.* FROM users u
+        INNER JOIN shopping_list_share sls ON u.id = sls.target_user_id AND sls.shopping_list_id = $1
+        ",
+        &[&shopping_list_id],
+    ).await.map_err(|e| HttpError::Query(e))?;
+
+    let users: Vec<UserResponse> = db_response.iter().map(UserResponse::from_row).collect();
+    Ok(warp::reply::json(&users))
 }
 
 pub async fn has_shopping_list(id: &Uuid, owner_id: &Uuid, db: &DBConn) -> bool {

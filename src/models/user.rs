@@ -3,6 +3,7 @@ use validator::{Validate};
 use tokio_postgres::Row;
 use uuid::Uuid;
 use chrono::{Utc};
+use crate::models::{Model, SqlQueryResponse};
 
 #[derive(Debug, Deserialize, Validate, Serialize, Clone)]
 pub struct User {
@@ -17,8 +18,12 @@ pub struct LoginDTO {
     pub password: String,
 }
 
-impl User {
-    pub fn from_row(row: &Row) -> Self {
+struct UserUpdate {}
+
+impl Model<UserUpdate> for User {
+    fn apply_changes(self: &mut Self, _changes: &UserUpdate) {}
+
+    fn from_row(row: &Row) -> Self {
         let uuid: Uuid = row.get(0);
         User {
             id: Some(uuid.to_string()),
@@ -32,7 +37,34 @@ impl User {
 pub struct UserResponse {
     pub id: Uuid,
     pub username: String,
-    pub token: String,
+}
+
+impl SqlQueryResponse for UserResponse {
+    fn from_row(row: &Row) -> Self {
+        let id: Uuid = row.get("id");
+        Self {
+            id,
+            username: row.get("username"),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UserResponseWithSharing {
+    pub id: Uuid,
+    pub username: String,
+    pub sharing: bool,
+}
+
+impl SqlQueryResponse for UserResponseWithSharing {
+     fn from_row(row: &Row) -> Self {
+        let id: Uuid = row.get("id");
+        Self {
+            id,
+            username: row.get("username"),
+            sharing: row.get("sharing")
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -54,4 +86,13 @@ impl TokenClaims {
             kid: token_id.to_string(),
         }
     }
+}
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+pub struct SearchQuery {
+    pub username: Option<String>,
+    #[serde(rename = "forListId")]
+    pub for_list_id: Option<Uuid>,
+    #[serde(rename = "excludeShared")]
+    pub exclude_shared: Option<bool>,
 }

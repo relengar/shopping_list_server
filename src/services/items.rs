@@ -1,7 +1,7 @@
 use crate::models::item::{Item, PartialUpdateResponse, PartialItem};
 use crate::services::database::{DBConn};
 use warp::{reply, reject, Rejection};
-use crate::models::{Pagination};
+use crate::models::{Pagination,Model};
 use uuid::Uuid;
 use crate::services::shopping_list::{validate_shopping_list_access};
 use warp::http::StatusCode;
@@ -34,8 +34,8 @@ pub async fn create_items(id: Uuid, owner: AuthenticatedUser, db: DBConn, items:
     let mut rows: Vec<Item> = Vec::new();
     let mut errors: Vec<String> = Vec::new();
     for item in items.iter() {
-        let current_amount = i32::try_from(item.current_amount).expect("Failed to cast current_amount");
-        let total_amount = i32::try_from(item.total_amount).expect("Failed to cast total_amount");
+        // let current_amount = f32::try_from(item.current_amount).expect("Failed to cast current_amount");
+        // let total_amount = f32::try_from(item.total_amount).expect("Failed to cast total_amount");
         let item_rows = db.query(
             "
                 INSERT INTO item (id, name, description, current_amount, total_amount, bought, unit, tags, shopping_list_id)
@@ -45,8 +45,8 @@ pub async fn create_items(id: Uuid, owner: AuthenticatedUser, db: DBConn, items:
             &[
                         &item.name,
                         &item.description,
-                        &current_amount,
-                        &total_amount,
+                        &item.current_amount,
+                        &item.total_amount,
                         &item.bought,
                         &item.unit.to_string().as_str(),
                         &item.tags,
@@ -83,8 +83,8 @@ pub async fn update_item(shopping_list_id: Uuid, item_id: Uuid, owner: Authentic
     if let Some(row) = existing_row {
         let mut existing = Item::from_row(row);
         existing.apply_changes(&item);
-        let current_amount = i32::try_from(existing.current_amount).expect("Failed to cast current_amount");
-        let total_amount = i32::try_from(existing.total_amount).expect("Failed to cast total_amount");
+        let current_amount = f32::try_from(existing.current_amount).expect("Failed to cast current_amount");
+        let total_amount = f32::try_from(existing.total_amount).expect("Failed to cast total_amount");
 
         let update_request = db.query(
             "
