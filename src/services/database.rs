@@ -41,12 +41,13 @@ pub fn init_redis() -> Result<RedisPool, mobc::Error<Error>> {
     Ok(Pool::builder().build(manager))
 }
 
-pub async fn get_connection<M: Manager>(pool: Pool<M>) -> Result<Connection<M>, Rejection> {
+pub async fn get_connection<M: Manager>(pool: Pool<M>) -> Result<Connection<M>, Rejection>
+    where <M as Manager>::Error: std::fmt::Debug
+ {
     match pool.get().await {
         Ok(conn) => Ok(conn),
         Err(_e) => {
-            // TODO how to print or debug the error?
-            // println!("Error on get connection {:?}", _e);
+            println!("Db connection error: {:?}", _e);
             Err(warp::reject::custom(HttpError::InternalServerError))
         }
     }

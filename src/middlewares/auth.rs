@@ -15,7 +15,6 @@ use mobc_redis::redis::AsyncCommands;
 // TODO load from env v variable?
 const PRIVATE_KEY: &[u8] = include_bytes!("../../jwtRS256.key");
 const PUBLIC_KEY: &[u8] = include_bytes!("../../jwtRS256.key.pub");
-// const EXPIRATION: usize = 1641661752446; // Utc::now().checked_add_signed(Duration::weeks(4)).unwrap().timestamp_millis() as usize;
 const EXPIRATION_ENV_KEY: &str = "JWT_EXPIRE_MILLIS";
 
 #[derive(Debug)]
@@ -58,11 +57,11 @@ pub async fn create_token(user_id: &Uuid, mut redis: RedisConn) -> Result<String
     let expiration: usize = dotenv::var(EXPIRATION_ENV_KEY).unwrap().parse::<usize>().unwrap();
     let token_id = Uuid::new_v4();
     let claims = TokenClaims::new(user_id, token_id, expiration);
-    // let PRIVATE_KEY: &[u8] = std::env::var("JWT_KEY_PRIVATE").unwrap().as_bytes();
     let encoding_key = EncodingKey::from_rsa_pem(PRIVATE_KEY)?;
     let header = Header::new(Algorithm::RS256);
     let token = encode(&header, &claims, &encoding_key)?;
     let new_session_key = get_redis_auth_key(user_id, Some(token_id));
+    
     let _: () = redis.pset_ex(new_session_key, token.as_str(), expiration).await.unwrap();
     Ok(token)
 }
@@ -84,7 +83,6 @@ fn get_redis_auth_key(user_id: &Uuid, token_id: Option<Uuid>) -> String {
 }
 
 fn validate_token(token: &str) -> Result<TokenData, HttpError> {
-    // let public_key = dotenv::var("JWT_KEY_PUBLIC").unwrap();
     let decoding_key = &DecodingKey::from_rsa_pem(PUBLIC_KEY)
         .map_err(|_err| HttpError::InternalServerError)?;
     let validation = Validation::new(Algorithm::RS256);

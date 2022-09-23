@@ -78,10 +78,11 @@ pub struct TokenClaims {
 
 impl TokenClaims {
     pub fn new(id: &Uuid, token_id: Uuid, expiration: usize) -> Self {
+        let now = Utc::now().timestamp_millis() as usize;
         Self {
             iss: String::from("shopping_list"),
-            iat: Utc::now().timestamp_millis() as usize,
-            exp: expiration,
+            iat: now,
+            exp: now + expiration,
             sub: id.to_string(),
             kid: token_id.to_string(),
         }

@@ -1,14 +1,52 @@
 version: "3.8"
 
 services:
-  main:
-    build:
-      dockerfile: Dockerfile
-      context: .
-    network_mode: "host"
-#    ports:
-#      - "3030:3030"
-    env_file:
-      - .env
+  # main:
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: .
+  #   network_mode: bridge
+  #   networks:
+  #     - shlist
+  #   ports:
+  #    - "3000:3000"
+  #   environment:
+  #     - RUST_BACKTRACE=1
+  #     - DB_USER=postgres
+  #     - DB_NAME=postgres
+  #     - DB_HOSTNAME=postgres
+  #     - DB_PASSWORD=postgres
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     - SALT=saltysalt
+  #     - JWT_EXPIRE_MILLIS=8600000
+  #     - PORT=3000
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  postgres:
+    image: postgres
+    network_mode: bridge
+    networks:
+      - shlist
+    ports:
+      - 5432:5432
     environment:
-      - RUST_BACKTRACE=1
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./migrations/20210924164311_init.up.sql:/docker-entrypoint-initdb.d/20210924164311_init.up.sql
+  redis:
+    image: redis
+    network_mode: bridge
+    networks:
+      - shlist
+    ports:
+      - 6379:6379
+
+volumes:
+  db:
+    
+networks:
+  shlist:
+    name: shlist

@@ -1,8 +1,15 @@
 FROM rust:1.58.1-buster as build
 
-COPY . .
+# RUN mkdir src
+COPY src src
+COPY Cargo* .
+COPY jwtRS256* .
 
 RUN cargo build --release
 
+# FROM rust:1.58.1-buster as release
+FROM debian:buster as release
 
-CMD ["./target/release/shopping_list"]
+COPY --from=build /target/release/shopping_list .
+
+CMD ["./shopping_list"]

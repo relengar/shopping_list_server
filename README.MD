@@ -8,6 +8,7 @@
 ### Setup
  - create an .env file with variables set according to the .env.example
  - generate RSA256 private and public keys to the root folder named (jwtRS256.key and jwtRS256.key.pub)
+   - `ssh-keygen -t rsa -b 4096 -m PEM -f jwtRS256.key`   
    - `openssl rsa -in jwtRS256.key -pubout -outform PEM -out jwtRS256.key.pub`
  - run migration on established postgres connection (either of following commands). You can alternatively use any migration tool.
    - `migrate -database "postgres://<user>:<password>@<host>/<db_name>?sslmode=disable" -source "file://./migrations" up` 

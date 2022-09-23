@@ -1,5 +1,6 @@
 extern crate dotenv;
 use dotenv::dotenv;
+use shopping_list::register_cancel_handler;
 use tokio_postgres::{NoTls};
 use shopping_list::services::database::{init_postgres, init_redis};
 use shopping_list::routes::router;
@@ -9,6 +10,8 @@ const DEFAULT_PORT: u16 = 3030;
 
 #[tokio::main]
 async fn main() {
+    register_cancel_handler();
+
     dotenv().ok();
 
     let port = std::env::var("PORT")
@@ -27,6 +30,5 @@ async fn main() {
 
     warp::serve(handlers)
         .run(([0, 0, 0, 0], port))
-        // .run(([192,168,0,104], PORT))
         .await;
 }

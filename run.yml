@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  serve:
+    image: shlist_server
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - RUST_BACKTRACE=1
+    # ports:
+    #   - 3000:3000

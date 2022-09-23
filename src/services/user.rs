@@ -1,5 +1,6 @@
 use crate::models::user::{User, LoginDTO, UserResponse, SearchQuery, UserResponseWithSharing};
-use warp::{Reply,Rejection};
+use warp::reply::{with_status, json};
+use warp::{Reply,Rejection,reject};
 use crate::services::database::{DBConn, RedisConn};
 use argon2::{hash_encoded, verify_encoded, Config};
 use warp::hyper::StatusCode;
@@ -21,7 +22,7 @@ pub async fn create_user(db: DBConn, redis: RedisConn, user: User) -> Result<imp
     let has_user: bool = has_user_response.get(0).expect("User count by name failed").get("has_user");
     if has_user {
         let msg = String::from("User already exists");
-        return Err(warp::reject::custom(HttpError::Conflict(msg)));
+        return Err(reject::custom(HttpError::Conflict(msg)));
     }
 
     let resp = db.query(
@@ -31,22 +32,35 @@ pub async fn create_user(db: DBConn, redis: RedisConn, user: User) -> Result<imp
 
     let sh_row = resp.get(0).expect("insert failed");
     let id = sh_row.get("id");
-    let token = get_token(id, redis).await?;
-    let user_response = TokenResponse {
-        id,
-        token,
-    };
-    Ok(warp::reply::with_status(warp::reply::json(&user_response), StatusCode::CREATED))
+    let token_result = get_token(id, redis).await;
+
+    match token_result {
+        Ok(token) => {
+            let user_response = TokenResponse {
+                id,
+                token,
+            };
+            Ok(with_status(json(&user_response), StatusCode::CREATED))
+        },
+        Err(e) => {
+            db.query(
+                "DELETE FROM users where id = $1",
+                &[&id]
+            ).await.map_err(|_| HttpError::InternalServerError)?;
+            Err(e)
+        },
+    }
+    
 }
 
 pub async fn login_handler(db: DBConn, redis: RedisConn, credentials: LoginDTO) -> Result<impl Reply, Rejection> {
     let resp = db.query(
         "SELECT id, password FROM users WHERE username=$1",
         &[&credentials.username.as_str()]
-    ).await.map_err(|e| warp::reject::custom(HttpError::Query(e)))?;
+    ).await.map_err(|e| reject::custom(HttpError::Query(e)))?;
     let row = resp.get(0)
         .ok_or(false)
-        .map_err(|_f| warp::reject::custom(HttpError::Unauthorized(String::from("Invalid username"))))?;
+        .map_err(|_f| reject::custom(HttpError::Unauthorized(String::from("Invalid username"))))?;
 
     let hash: String = row.get(1);
 
@@ -57,8 +71,8 @@ pub async fn login_handler(db: DBConn, redis: RedisConn, credentials: LoginDTO) 
         true => {
             let id: Uuid = row.get(0);
             let token_response = get_token(id, redis).await.map(|token| TokenResponse{ token, id })?;
-            Ok(warp::reply::with_status(
-                warp::reply::json(&token_response),
+            Ok(with_status(
+                json(&token_response),
                 StatusCode::OK,
             ))
         },
@@ -80,14 +94,14 @@ pub async fn get_by_id(db: DBConn, user: AuthenticatedUser) -> Result<impl Reply
     let option = resp.get(0);
     if let Some(row) = option {
         let user_response = UserResponse::from_row(row);
-        Ok(warp::reply::with_status(
-            warp::reply::json(&user_response),
+        Ok(with_status(
+            json(&user_response),
             StatusCode::OK,
         ))
     } else {
         let error_message = String::from("User not found");
         let not_found_error = HttpError::NotFound(error_message);
-        Err(warp::reject::custom(not_found_error))
+        Err(reject::custom(not_found_error))
     }
 }
 
@@ -99,7 +113,7 @@ pub async fn delete_user(db: DBConn, id: Uuid, redis: RedisConn) -> Result<impl 
     redis?;
     sql.map_err(|e| HttpError::Query(e))?;
 
-    Ok(warp::reply::with_status(warp::reply(), StatusCode::NO_CONTENT))
+    Ok(with_status(warp::reply(), StatusCode::NO_CONTENT))
 }
 
 pub async fn search_user(
@@ -120,7 +134,7 @@ pub async fn search_user(
         let has = has_shopping_list(&id, &current_user.id, &db).await;
         if !has {
             let msg = String::from("Not allowed to view this list data");
-            return Err(warp::reject::custom(HttpError::Unauthorized(msg)));
+            return Err(reject::custom(HttpError::Unauthorized(msg)));
         }
     }
 
@@ -180,13 +194,13 @@ pub async fn search_user(
     let total: i32 = parsed_count.get(0).expect("count failed").get("total");
 
     let response = QueryResponse::new(users, total);
-    Ok(warp::reply::json(&response))
+    Ok(json(&response))
 }
 
 async fn get_token(id: Uuid, redis: RedisConn) -> Result<String, Rejection> {
     let token = create_token(&id, redis).await.map_err(|_e| {
         println!("Token creation failed {:?}", _e);
-        warp::reject::custom(HttpError::InternalServerError)
+        reject::custom(HttpError::InternalServerError)
     })?;
 
     Ok(token)
@@ -195,7 +209,7 @@ async fn get_token(id: Uuid, redis: RedisConn) -> Result<String, Rejection> {
 fn reject_password<T>(_e: T) -> Rejection {
     let password_error_message = String::from("invalid password");
     let password_error = HttpError::Unauthorized(password_error_message);
-    warp::reject::custom(password_error)
+    reject::custom(password_error)
 }
 
 #[derive(Serialize)]

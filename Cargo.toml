@@ -22,3 +22,4 @@ mobc-redis = "0.7.0"
 chrono = "0.4.19"
 jsonwebtoken = "7.2.0"
 dotenv = "0.15.0"
+ctrlc = { version = "3.0", features = ["termination"] }
