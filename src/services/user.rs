@@ -11,11 +11,12 @@ use serde::Serialize;
 use tokio_postgres::types::ToSql;
 use crate::models::{Pagination, QueryResponse, SqlQueryResponse};
 use crate::services::shopping_list::has_shopping_list;
+use rand::Rng;
 
 pub async fn create_user(db: DBConn, redis: RedisConn, user: User) -> Result<impl Reply, Rejection>  {
     let config = Config::default();
-    let salt = dotenv::var("SALT").unwrap();
-    let hash = hash_encoded(&user.password.as_bytes(), salt.as_bytes(), &config).unwrap();
+    let salt: [u8; 32] = rand::thread_rng().gen();
+    let hash = hash_encoded(&user.password.as_bytes(), &salt, &config).unwrap();
 
     let has_user_response = db.query("SELECT count(u.username) > 0 as has_user FROM users u WHERE u.username=$1", &[&user.username])
         .await.map_err(|e| HttpError::Query(e))?;

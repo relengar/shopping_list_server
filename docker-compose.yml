@@ -18,7 +18,6 @@ services:
   #     - DB_PASSWORD=postgres
   #     - REDIS_HOST=redis
   #     - REDIS_PORT=6379
-  #     - SALT=saltysalt
   #     - JWT_EXPIRE_MILLIS=8600000
   #     - PORT=3000
   #   depends_on:
