@@ -3,7 +3,9 @@ FROM rust:1.58.1-buster as build
 # RUN mkdir src
 COPY src src
 COPY Cargo* .
-COPY jwtRS256* .
+
+RUN ssh-keygen -t rsa -b 4096 -m PEM -f jwtRS256.key
+RUN openssl rsa -in jwtRS256.key -pubout -outform PEM -out jwtRS256.key.pub
 
 RUN cargo build --release
 
