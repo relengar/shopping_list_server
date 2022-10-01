@@ -10,16 +10,18 @@ services:
   #     - shlist
   #   ports:
   #    - "3000:3000"
-  #   environment:
-  #     - RUST_BACKTRACE=1
-  #     - DB_USER=postgres
-  #     - DB_NAME=postgres
-  #     - DB_HOSTNAME=postgres
-  #     - DB_PASSWORD=postgres
-  #     - REDIS_HOST=redis
-  #     - REDIS_PORT=6379
-  #     - JWT_EXPIRE_MILLIS=8600000
-  #     - PORT=3000
+  #   env_file:
+  #     - .env
+  #   # environment:
+  #   #   - RUST_BACKTRACE=1
+  #   #   - DB_USER=postgres
+  #   #   - DB_NAME=postgres
+  #   #   - DB_HOSTNAME=0.0.0.0
+  #   #   - DB_PASSWORD=postgres
+  #   #   - REDIS_HOST=redis
+  #   #   - REDIS_PORT=6379
+  #   #   - JWT_EXPIRE_MILLIS=8600000
+  #   #   - PORT=3000
   #   depends_on:
   #     - postgres
   #     - redis

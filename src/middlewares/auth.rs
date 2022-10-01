@@ -7,8 +7,9 @@ use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, D
 use jsonwebtoken::errors::Error as TokenError;
 use crate::models::user::TokenClaims;
 use crate::services::database::{RedisPool, RedisConn};
-use crate::middlewares::with_redis;
 use mobc_redis::redis::AsyncCommands;
+
+use super::with_connection;
 
 // const PRIVATE_KEY: &[u8] = std::env::var("JWT_KEY_PRIVATE").unwrap().as_bytes();
 // const PUBLIC_KEY: String = std::env::var("JWT_KEY_PUBLIC").unwrap();
@@ -29,7 +30,7 @@ struct TokenData {
 
 pub fn with_auth(redis_pool: &RedisPool) -> impl Filter<Extract = (AuthenticatedUser,), Error = Rejection> + Clone {
     warp::filters::header::headers_cloned()
-        .and(with_redis(redis_pool))
+        .and(with_connection(redis_pool))
         .and_then(authenticate)
 }
 

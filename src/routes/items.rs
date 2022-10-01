@@ -1,7 +1,7 @@
 use warp::{Filter, Rejection, Reply};
 use crate::services::items::{create_items, get_items as get_items_handler, update_item, delete_item as delete_item_handler};
 use uuid::Uuid;
-use crate::middlewares::{with_vec_body, with_body, with_database, with_query};
+use crate::middlewares::{with_vec_body, with_body, with_connection, with_query};
 use crate::middlewares::auth::with_auth;
 use crate::models::GlobalContext;
 
@@ -17,7 +17,7 @@ fn get_items(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = R
     warp::get()
         .and(with_path())
         .and(with_auth(&ctx.redis_pool))
-        .and(with_database(&ctx.pg_pool))
+        .and(with_connection(&ctx.pg_pool))
         .and(with_query())
         .and_then(get_items_handler)
 }
@@ -26,7 +26,7 @@ fn add_items(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = R
     warp::post()
         .and(with_path())
         .and(with_auth(&ctx.redis_pool))
-        .and(with_database(&ctx.pg_pool))
+        .and(with_connection(&ctx.pg_pool))
         .and(with_vec_body())
         .and_then(create_items)
 }
@@ -35,7 +35,7 @@ fn patch_item(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error = 
     warp::patch()
         .and(with_item_id_path())
         .and(with_auth(&ctx.redis_pool))
-        .and(with_database(&ctx.pg_pool))
+        .and(with_connection(&ctx.pg_pool))
         .and(with_body())
         .and_then(update_item)
 }
@@ -44,7 +44,7 @@ fn delete_item(ctx: &GlobalContext) -> impl Filter<Extract = impl Reply, Error =
     warp::delete()
         .and(with_item_id_path())
         .and(with_auth(&ctx.redis_pool))
-        .and(with_database(&ctx.pg_pool))
+        .and(with_connection(&ctx.pg_pool))
         .and_then(delete_item_handler)
 }
 
